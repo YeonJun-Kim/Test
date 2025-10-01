@@ -1,0 +1,198 @@
+﻿Delete Symbols();
+Names Default To Here( 1 );
+
+
+Version = "V1.1";
+
+/////// IV Plot Generator ///////////////////////////////////////////////////////////////////
+////// V1.0 : Initial //////////////////////////////////////////////////////////////////
+////// V2.0 (231017) : Script 살짝 수정 --> Compliance current 없앰
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+//dirpath = Pick File();
+//dir_script = Get Default Directory();
+//dir_result = dir_script || "Output/";
+
+//dt = Open( dir_result || "tmp.csv" );
+dt = current data table();
+
+
+dt << New Script(
+"(Linear) IV Curve Measurement [A]",
+Graph Builder(
+	Size( 792, 686 ),
+	Variables( X( :"Voltage[V]"n ), Y( :"Current[A]"n ) ,WRAP( :Pin ),
+		Overlay( :SerialNumber )),
+	Elements( Points( X, Y, Legend( 5 ) ), Line( X, Y, Legend( 7 ) ) ),
+	Local Data Filter(
+		Add Filter( columns( :SerialNumber, :Measurement_type, :Pin ) )
+	),
+	SendToReport(
+		Dispatch(
+			{},
+			"graph title",
+			TextEditBox,
+			{Set Text( "(Linear) IV Curve Measurement [A]" )}
+		),
+		Dispatch(
+			{},
+			"graph 1 title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"X title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"Y title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		)
+	)
+));
+
+
+
+
+dt << New Script(
+"(Log) IV Curve Measurement [A]",
+
+Graph Builder(
+	Size( 792, 686 ),
+	Variables( X( :"Voltage[V]"n ), Y( :"Current[A]"n ) ,WRAP( :Pin ),
+		Overlay( :SerialNumber )),
+	Elements( Points( X, Y, Legend( 5 ) ), Line( X, Y, Legend( 7 ) ) ),
+	Local Data Filter(
+		Add Filter( columns( :SerialNumber, :Measurement_type, :Pin ) )
+	),
+	SendToReport(
+		Dispatch(
+			{},
+			"Current[A]",
+			ScaleBox,
+			{Scale( "Log" ), Min(1e-12 ), Max( 1 ), Inc( 1 ),
+			Minor Ticks( 1 )}
+		),
+		Dispatch(
+			{},
+			"graph title",
+			TextEditBox,
+			{Set Text( "(Log) IV Curve Measurement [A]" )}
+		),
+		Dispatch(
+			{},
+			"graph 1 title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"X title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"Y title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		)
+	)
+));
+
+
+dt << New Script(
+"(Linear) IV Curve Measurement [mA]",
+Graph Builder(
+	Size( 792, 686 ),
+	Variables( X( :"Voltage[V]"n ), Y( :"Current[mA]"n ),WRAP( :Pin ),
+		Overlay( :SerialNumber ) ),
+	Elements( Points( X, Y, Legend( 5 ) ), Line( X, Y, Legend( 7 ) ) ),
+	Local Data Filter(
+		Add Filter( columns( :SerialNumber, :Measurement_type, :Pin ) )
+	),
+	SendToReport(
+		Dispatch(
+			{},
+			"graph title",
+			TextEditBox,
+			{Set Text( "(Linear) IV Curve Measurement [mA]" )}
+		),
+		Dispatch(
+			{},
+			"graph 1 title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"X title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"Y title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		)
+	)
+));
+
+
+
+
+dt << New Script(
+"(Log) IV Curve Measurement [mA]",
+
+Graph Builder(
+	Size( 792, 686 ),
+	Variables( X( :"Voltage[V]"n ), Y( :"Current[mA]"n ) ,WRAP( :Pin ),
+		Overlay( :SerialNumber )),
+	Elements( Points( X, Y, Legend( 5 ) ), Line( X, Y, Legend( 7 ) ) ),
+	Local Data Filter(
+		Add Filter( columns( :SerialNumber, :Measurement_type, :Pin ) )
+	),
+	SendToReport(
+		Dispatch(
+			{},
+			"Current[mA]",
+			ScaleBox,
+			{Scale( "Log" ), Format( "Best", 6 ), Min( 1e-12 ), Max( 1 ),
+			Inc( 1 ), Minor Ticks( 1 )}
+		),
+		Dispatch(
+			{},
+			"graph title",
+			TextEditBox,
+			{Set Text( "(Log) IV Curve Measurement [mA]" )}
+		),
+		Dispatch(
+			{},
+			"graph 1 title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"X title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		),
+		Dispatch(
+			{},
+			"Y title",
+			TextEditBox,
+			{Set Font Size( 11 ), Set Font Style( "Bold" )}
+		)
+	)
+));
+
+
+dt << save(dir_result || "JMPScriptCompleted.txt");
+
+//quit();
