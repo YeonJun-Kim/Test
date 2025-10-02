@@ -14,7 +14,7 @@ import subprocess
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-Version = "V4.3 (250716)"
+Version = "V5_tmp (251002)"
 
 # Version History # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # V1.0 (231016) : Staircase IV Sweep + JMP Plotting 기능 추가 --> GUI 개선 및 Pulse Case 업데이트 필요
@@ -25,9 +25,13 @@ Version = "V4.3 (250716)"
 # V3.2 (241204) : Limit 설정 time 변경 --> 2611 SMU 에서 Error 나지 않게 하기 위함
 # V4.0 (241223) : Auto setting 기능 추가  (Bump Skip DOE 전용 PIN 들만) & GPIB / Serial 겸용
 # V4.1 (241227) : GPIB/Serial 선택 debug / plot stack, 삭제 기능 수정
-# V4.2 (250408) : Buffer remove 
+# V4.2 (250408) : 측정 시 마다 Buffer remove 
 # V4.3 (250716) : Auto Config Forward limit 도 불러오도록 변경
+# V5.0_tmp (251002) : GUI Layout 변경 및 Current source 내용 추가
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+
+
 class IV260X:
     
     rm = visa.ResourceManager()
