@@ -10,41 +10,30 @@ from PIL import Image, ImageTk
 from threading import *
 from tkinter import messagebox as msgbox
 import subprocess
-
+from tkinter import filedialog, messagebox
+import json
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-Version = "V5_tmp (251002)"
-
-# Version History # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# V1.0 (231016) : Staircase IV Sweep + JMP Plotting 기능 추가 --> GUI 개선 및 Pulse Case 업데이트 필요
-# V2.0 (231109) : Pulse Sweep + Abort 기능 추가 + Staircase 시 Output on/off 하던 건 지속해서 on 되어있도록 변경
-# V2.1 (231115) : 바로 직전 데이터 삭제 기능 추가 --> Abnormal Data 측정 시
-# V3.0 (231130) : 측정 데이터 Plot // Abnormal Data 삭제 관련 debug
-# V3.1 (231205) : Autorange 관련 설정 추가 - Autorange on/off Test 위함
-# V3.2 (241204) : Limit 설정 time 변경 --> 2611 SMU 에서 Error 나지 않게 하기 위함
-# V4.0 (241223) : Auto setting 기능 추가  (Bump Skip DOE 전용 PIN 들만) & GPIB / Serial 겸용
-# V4.1 (241227) : GPIB/Serial 선택 debug / plot stack, 삭제 기능 수정
-# V4.2 (250408) : 측정 시 마다 Buffer remove 
-# V4.3 (250716) : Auto Config Forward limit 도 불러오도록 변경
-# V5.0_tmp (251002) : GUI Layout 변경 및 Current source 내용 추가
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
 
-class IV260X:
+class VISweep(ttk.Frame):
     
     rm = visa.ResourceManager()
 
     def __init__(self, master):
-        self.master = master
+        # self = master
         self.event = Event()
-        master.title("IV Curve Measurement " + Version)
-        print("##############################################################")
-        print(f"Version : {Version}")
-        print("##############################################################")
+        self.json_path = 'Config.json'
+        self.sourcetype = "Voltage source"
+        # master.title("IV Curve Measurement " + Version)
+        super().__init__(master)
+        # print("##############################################################")
+        # print(f"Version : {Version}")
+        # print("##############################################################")
 
-        self.df_config = pd.read_csv('Auto_Config.csv')
+        self.df_config = pd.read_csv('Auto_Config_VSource.csv')
         self.pin_list = self.df_config['Pin_Total'].to_list()
         self.vinmin_list = self.df_config['Voltage_-'].to_list()
         self.vinpl_list = self.df_config['Voltage_+'].to_list()
@@ -55,7 +44,7 @@ class IV260X:
 
         self.devlist = self.rm.list_resources()
         # rm = visa.ResourceManager()
-        print("Serial INST : ", self.devlist)
+        # print("Serial INST : ", self.devlist)
         # print('Pin_list : ', self.pin_list )
         # print('vinmin_list : ', self.vinmin_list )
         # print('vinpl_list : ', self.vinpl_list )
@@ -64,28 +53,29 @@ class IV260X:
         self.create_widgets()
         self.colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
         self.plot_data = []
+        self.create_widgets()
 
     def create_widgets(self):
         # Parameter Block
-        parameter_frame = ttk.Frame(self.master)
+        parameter_frame = ttk.Frame(self)
         parameter_frame.grid(row=0, column=0, padx=10, pady=10)
 
         # Detail Block
-        detail_frame = ttk.Frame(self.master)
+        detail_frame = ttk.Frame(self)
         detail_frame.grid(row=1, column=0, padx=10, pady=10)
         header_font = tkinter.font.Font(family="Arial", weight="bold", size=15)
         header_font2 = tkinter.font.Font(family="Arial", weight="bold", size=11)
 
         # Frame for Image
-        image_frame = ttk.Frame(self.master)
+        image_frame = ttk.Frame(self)
         image_frame.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
 
         # Frame for Action button
-        action_frame = ttk.Frame(self.master)
+        action_frame = ttk.Frame(self)
         action_frame.grid(row=2, column=0, columnspan=2)
 
         # Frame for IV plot
-        plot_frame = ttk.Frame(self.master)
+        plot_frame = ttk.Frame(self)
         plot_frame.grid(row=0, column=2, rowspan=2, padx=3, pady=3)
 
         # Label for plot
@@ -99,7 +89,7 @@ class IV260X:
         self.canvas.get_tk_widget().grid(row=1, column=0, padx=10, pady=10)
 
         # Parameter Header
-        self.header_parameter = ttk.Label(parameter_frame, text="IV Parameter Block", font=header_font)
+        self.header_parameter = ttk.Label(parameter_frame, text="Voltage Source Parameter", font=header_font)
         self.header_parameter.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
 
@@ -299,7 +289,7 @@ class IV260X:
         self.button_start = ttk.Button(action_frame, text="Start Measurement", command=self.threading)
         self.button_start.grid(row=0, column=1, padx=10, pady=10)
 
-        # Button to Start Measurement
+        # Button to Stop Measurement
         self.button_abort = ttk.Button(action_frame, text="Abort", command=self.abort, state=tk.DISABLED)
         self.button_abort.grid(row=0, column=2, padx=10, pady=10)
 
@@ -452,7 +442,7 @@ class IV260X:
         self.ax.set_yscale('log')
         self.ax.set_xlabel('Voltage (V)')
         self.ax.set_ylabel('Current (mA)')
-        self.ax.set_title('IV Curve (mA)')
+        self.ax.set_title('IV Curve (V-mA)')
         self.ax.legend(loc='upper right')
         self.canvas.draw()
 
@@ -493,21 +483,83 @@ class IV260X:
                 print("No SMU Connected")           
         
     def export_jmp(self):
-        filename = self.entry_filename.get()        
-        result_path = os.getcwd() + "/Output/" + filename + ".csv"
-        df_tmp = pd.read_csv(result_path)
-        df_tmp.to_csv(os.getcwd() + "/Output/tmp.csv")
 
-        try:
-            subprocess.call([r"C:\Program Files\SAS\JMP\16\jmp.exe", os.getcwd() + r"/IV_Plot_Generator_exe.jsl"])
-            while not os.path.exists(os.getcwd() + "/Output/JMPScriptCompleted.txt"):
-                time.sleep(1)
-            os.remove(os.getcwd() + "/Output/tmp.csv")
-            os.remove(os.getcwd() + "/Output/JMPScriptCompleted.txt")
-            print("Export to JMP finished")
-        except Exception as e:
-            print("Cannot open JMP... Check JMP path or install JMP first")
-            os.remove(os.getcwd() + "/Output/tmp.csv")
+        def path_update():
+            # path = filedialog.askopenfilename()
+            # self.entry_start_voltage.delete(0, tk.END)
+            # self.entry_start_voltage.insert(0, path)
+            self.file_path = filedialog.askopenfilename(initialdir="C:/",filetypes=[("Executable files", "*.exe")])
+            if self.file_path:
+                # self.jmp_path = self.file_path
+        
+                with open(self.json_path,'r') as file :
+                    data = json.load(file)
+
+                
+                data["JMP_dir"] = self.file_path
+                    
+                with open(self.json_path, 'w', encoding='utf-8') as file:
+                    json.dump(data,file,ensure_ascii=False,indent= 2)
+
+            self.jmp_label.configure(text = self.file_path)
+
+        def run_jmp():
+
+            filename = self.entry_filename.get()
+            jmp_dir = self.jmp_label.get()
+            script_dir = self.script_label.get()        
+            result_path = os.getcwd() + "/Output/" + filename + ".csv"
+            df_tmp = pd.read_csv(result_path)
+            df_tmp.to_csv(os.getcwd() + "/Output/tmp.csv")
+
+
+            with open(self.json_path, 'r') as file:
+                data = json.load(file)
+                self.jmp_path = data["JMP_dir"]
+                self.iv_script = data["VI_Script"]
+            try:
+                subprocess.call([jmp_dir, os.getcwd() + script_dir])
+                while not os.path.exists(os.getcwd() + "/Output/JMPScriptCompleted.txt"):
+                    time.sleep(1)
+                os.remove(os.getcwd() + "/Output/tmp.csv")
+                os.remove(os.getcwd() + "/Output/JMPScriptCompleted.txt")
+                print("Export to JMP finished")
+            except Exception as e:
+                print("Cannot open JMP... Check JMP path or install JMP first")
+                os.remove(os.getcwd() + "/Output/tmp.csv")
+
+
+        with open(self.json_path, 'r') as file:
+            data = json.load(file)
+            self.jmp_path = data["JMP_dir"]
+            self.iv_script = data["VI_Script"]
+            # print("JMP path from json : ", self.jmp_path)
+            # print("IV script from json : ", self.iv_script)
+
+
+        jmp_window = tk.Toplevel()
+        jmp_window.title("Export to JMP")
+        ttk.Button(jmp_window, text="JMP Path",command=path_update).grid(row=0, column=0, padx=20, pady=20)
+        self.jmp_label = ttk.Label(jmp_window, text=self.jmp_path).grid(row=0, column=1, padx=20, pady=20)
+        
+        ttk.Button(jmp_window, text = "Script Path").grid(row=1, column=0, padx=20, pady=20) 
+        self.script_label = ttk.Label(jmp_window, text=self.iv_script).grid(row=1, column=1, padx=20, pady=20)
+        ttk.Button(jmp_window, text='Run', command=run_jmp).grid(row=2, column=0, padx=20, pady=20)
+        ttk.Button(jmp_window,text='Cancel', command=jmp_window.destroy).grid(row=0, column=1, padx=20, pady=20)
+
+        # text="Export to JMP", 
+
+
+        # try:
+        #     subprocess.call([r"C:\Program Files\SAS\JMP\16\jmp.exe", os.getcwd() + r"/IV_Plot_Generator_exe.jsl"])
+        #     while not os.path.exists(os.getcwd() + "/Output/JMPScriptCompleted.txt"):
+        #         time.sleep(1)
+        #     os.remove(os.getcwd() + "/Output/tmp.csv")
+        #     os.remove(os.getcwd() + "/Output/JMPScriptCompleted.txt")
+        #     print("Export to JMP finished")
+        # except Exception as e:
+        #     print("Cannot open JMP... Check JMP path or install JMP first")
+        #     os.remove(os.getcwd() + "/Output/tmp.csv")
 
     def delete_old(self):
         def confirm_deletion(selection):
@@ -543,7 +595,10 @@ class IV260X:
         combobox = ttk.Combobox(deletion_window, textvariable=selected_label, values=labels_cleaned)
         combobox.pack(padx=20, pady=10)
         ttk.Button(deletion_window, text="OK", command=lambda: confirm_deletion(selected_label.get())).pack(padx=20, pady=10)
-        
+
+
+
+       
     def show_image(self, image_path):
         image = Image.open(image_path)
         tk_image = ImageTk.PhotoImage(image.resize((400, 300)))
@@ -663,7 +718,7 @@ class IV260X:
 
         if not os.path.exists(result_path):
             print(f"No File found... Create a new one : {filename}.csv")
-            df = pd.DataFrame({"Label": [1] * N_measure, "SerialNumber": [module_SN] * N_measure, "Measurement_type": [measurementType] * N_measure, "Channel": [selected_channel] * N_measure,
+            df = pd.DataFrame({"Label": [1] * N_measure, "Sourcetype" : [self.sourcetype]* N_measure, "SerialNumber": [module_SN] * N_measure, "Measurement_type": [measurementType] * N_measure, "Channel": [selected_channel] * N_measure,
                                "Sense_mode": [selected_sensemode] * N_measure, "Sweep_Type": [selected_type] * N_measure, "Forward_Limit(mA)": [1000 * float(comp_currentf)] * N_measure,
                                "Reverse_Limit(mA)": [1000 * float(comp_currentr)] * N_measure, "Hold_On_Delay(ms)": [on_delay] * N_measure, "Pulse_Off_Time(ms)": [off_delay] * N_measure,
                                "Autorange": [autorange_selected] * N_measure, "Measure_Range(mA)": [mrange * 1000] * N_measure, "Autozero": [autozero] * N_measure,
@@ -675,7 +730,7 @@ class IV260X:
             print(f"{filename}.csv already exists .. Overwrite the result on it")
             df = pd.read_csv(result_path)
             max_label = df['Label'].max()
-            df2 = pd.DataFrame({"Label": [max_label + 1] * N_measure, "SerialNumber": [module_SN] * N_measure, "Measurement_type": [measurementType] * N_measure,
+            df2 = pd.DataFrame({"Label": [max_label + 1] * N_measure, "Sourcetype" : [self.sourcetype]* N_measure, "SerialNumber": [module_SN] * N_measure, "Measurement_type": [measurementType] * N_measure,
                                 "Channel": [selected_channel] * N_measure, "Sense_mode": [selected_sensemode] * N_measure, "Sweep_Type": [selected_type] * N_measure,
                                 "Forward_Limit(mA)": [1000 * float(comp_currentf)] * N_measure, "Reverse_Limit(mA)": [1000 * float(comp_currentr)] * N_measure,
                                 "Hold_On_Delay(ms)": [on_delay] * N_measure, "Pulse_Off_Time(ms)": [off_delay] * N_measure, "Autorange": [autorange_selected] * N_measure,
@@ -697,6 +752,7 @@ class IV260X:
             keithley.write("smua.reset()")
             keithley.write("display.screen = 0")
             keithley.write("smua.sense = " + str(sensemode))
+            keithley.write("smua.source.func = smua.OUTPUT_DCVOLTS")
             keithley.write("smua.source.autorangev = 1")
             if str(autorange) == "1":
                 keithley.write("smua.measure.autorangei = 1")
@@ -717,6 +773,7 @@ class IV260X:
             keithley.write("smub.reset()")
             keithley.write("display.screen = 1")
             keithley.write("smub.sense = " + str(sensemode))
+            keithley.write("smub.source.func = smub.OUTPUT_DCVOLTS")
             keithley.write("smub.source.autorangev = 1")
             if str(autorange) == "1":
                 keithley.write("smub.measure.autorangei = 1")
@@ -756,6 +813,7 @@ class IV260X:
                 time.sleep(float(on_delay) / 1000)
                 keithley.write("smua.measure.i(smua.nvbuffer1)")
                 current = keithley.query("printbuffer(1,1,smua.nvbuffer1.readings)")
+                print("Current measured : ", current)
                 currents.append(current)
                 voltages.append(voltage)
 
@@ -771,6 +829,7 @@ class IV260X:
                 time.sleep(float(on_delay) / 1000)
                 keithley.write("smub.measure.i(smub.nvbuffer1)")
                 current = keithley.query("printbuffer(1,1,smub.nvbuffer1.readings)")
+                print("Current measured : ", current)
                 currents.append(current)
                 voltages.append(voltage)
                 
@@ -779,11 +838,11 @@ class IV260X:
                 break
 
         if channel == "Channel A":
-            keithley.write("smua.nvbuffer1.clear()") # New : Buffer remove
             keithley.write("smua.source.output = smua.OUTPUT_OFF")
+            keithley.write("smua.nvbuffer1.clear()") # New : Buffer remove
         else :
-            keithley.write("smub.nvbuffer1.clear()") # New : Buffer remove
             keithley.write("smub.source.output = smub.OUTPUT_OFF")
+            keithley.write("smub.nvbuffer1.clear()") # New : Buffer remove
         if beep == 1:
             keithley.write("beeper.beep(0.5,2000)")
         print("IV Sweep Finished..")
@@ -812,6 +871,7 @@ class IV260X:
                 time.sleep(float(on_delay) / 1000)
                 keithley.write("smua.measure.i(smua.nvbuffer1)")
                 current = keithley.query("printbuffer(1,1,smua.nvbuffer1.readings)")
+                print("Current measured : ", current)
                 currents.append(current)
                 voltages.append(voltage)
                 keithley.write("smua.source.output = smua.OUTPUT_OFF")
@@ -851,5 +911,11 @@ class IV260X:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = IV260X(root)
+    notebook = ttk.Notebook(root)
+
+    notebook.pack(expand=1, fill='both')
+
+    tab1 = VISweep(notebook)
+    notebook.add(tab1, text='VI Sweep (Voltage Source)')    
+    # app = IVSweep(root)
     root.mainloop()

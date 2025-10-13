@@ -9,5 +9,4 @@
 # V4.1 (241227) : GPIB/Serial 선택 debug / plot stack, 삭제 기능 수정
 # V4.2 (250408) : 측정 시 마다 Buffer remove 
 # V4.3 (250716) : Auto Config Forward limit 도 불러오도록 변경
-# V5.0_tmp (251002) : GUI Layout 변경 및 Current source 내용 추가
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# V5.0_tmp (251013) : GUI tab 추가 (Current source / Voltage source) 및 회로 심화 스터디 PJT 겸용 업데이트
