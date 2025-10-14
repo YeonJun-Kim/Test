@@ -22,8 +22,10 @@ class VISweep(ttk.Frame):
     
     rm = visa.ResourceManager()
 
-    def __init__(self, master):
+    def __init__(self, master, main_window = None):
         # self = master
+        super().__init__(master)
+        self.main_window = main_window
         self.event = Event()
         self.json_path = 'Config.json'
         self.sourcetype = "Voltage source"
@@ -451,7 +453,12 @@ class VISweep(ttk.Frame):
             os.remove(os.getcwd() + "/Output/tmp_del.csv")
         else:
             pass                      
-        root.destroy()
+        # root.destroy()
+
+        if self.main_window is not None:
+            self.main_window.destroy()
+
+
     def interface_check(self) :
         interface_type = self.combo_interface.get()
         print('interface_type : ', interface_type)
@@ -545,7 +552,7 @@ class VISweep(ttk.Frame):
         ttk.Button(jmp_window, text = "Script Path").grid(row=1, column=0, padx=20, pady=20) 
         self.script_label = ttk.Label(jmp_window, text=self.iv_script).grid(row=1, column=1, padx=20, pady=20)
         ttk.Button(jmp_window, text='Run', command=run_jmp).grid(row=2, column=0, padx=20, pady=20)
-        ttk.Button(jmp_window,text='Cancel', command=jmp_window.destroy).grid(row=0, column=1, padx=20, pady=20)
+        ttk.Button(jmp_window,text='Cancel', command=jmp_window.destroy).grid(row=2, column=1, padx=20, pady=20)
 
         # text="Export to JMP", 
 

@@ -24,8 +24,8 @@ def main():
 
     notebook.pack(expand=1, fill='both')
 
-    tab1 = VISweep(notebook)
-    tab2 = IVSweep(notebook)
+    tab1 = VISweep(notebook,window)
+    tab2 = IVSweep(notebook,window)
 
 
 
