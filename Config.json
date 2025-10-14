@@ -1,7 +1,5 @@
 {
-    "JMP_dir" : "C:/Program Files/SAS/JMP/16/jmp.exe",
-    "IV_Script" : "IV_Plot_Generator.jsl",
-    "VI_Script" : "VI_Plot_Generator.jsl"
-	
+  "JMP_dir": "C:/Program Files/AutoHotkey/AutoHotkey.exe",
+  "IV_Script": "IV_Plot_Generator.jsl",
+  "VI_Script": "VI_Plot_Generator.jsl"
 }
-	

@@ -30,7 +30,7 @@ class VISweep(ttk.Frame):
         self.json_path = 'Config.json'
         self.sourcetype = "Voltage source"
         # master.title("IV Curve Measurement " + Version)
-        super().__init__(master)
+        # super().__init__(master)
         # print("##############################################################")
         # print(f"Version : {Version}")
         # print("##############################################################")
@@ -495,6 +495,7 @@ class VISweep(ttk.Frame):
             # path = filedialog.askopenfilename()
             # self.entry_start_voltage.delete(0, tk.END)
             # self.entry_start_voltage.insert(0, path)
+
             self.file_path = filedialog.askopenfilename(initialdir="C:/",filetypes=[("Executable files", "*.exe")])
             if self.file_path:
                 # self.jmp_path = self.file_path
@@ -507,14 +508,15 @@ class VISweep(ttk.Frame):
                     
                 with open(self.json_path, 'w', encoding='utf-8') as file:
                     json.dump(data,file,ensure_ascii=False,indent= 2)
+            # print('self.file_path : ',self.file_path)
 
             self.jmp_label.configure(text = self.file_path)
 
         def run_jmp():
-
+ 
             filename = self.entry_filename.get()
-            jmp_dir = self.jmp_label.get()
-            script_dir = self.script_label.get()        
+            jmp_dir = self.jmp_label.cget("text")
+            script_dir = self.script_label.cget("text")        
             result_path = os.getcwd() + "/Output/" + filename + ".csv"
             df_tmp = pd.read_csv(result_path)
             df_tmp.to_csv(os.getcwd() + "/Output/tmp.csv")
@@ -543,16 +545,21 @@ class VISweep(ttk.Frame):
             # print("JMP path from json : ", self.jmp_path)
             # print("IV script from json : ", self.iv_script)
 
-
         jmp_window = tk.Toplevel()
+        jmp_window.grab_set()
+
         jmp_window.title("Export to JMP")
         ttk.Button(jmp_window, text="JMP Path",command=path_update).grid(row=0, column=0, padx=20, pady=20)
-        self.jmp_label = ttk.Label(jmp_window, text=self.jmp_path).grid(row=0, column=1, padx=20, pady=20)
+        self.jmp_label = ttk.Label(jmp_window, text=self.jmp_path)
+        self.jmp_label.grid(row=0, column=1, padx=20, pady=20)
         
         ttk.Button(jmp_window, text = "Script Path").grid(row=1, column=0, padx=20, pady=20) 
-        self.script_label = ttk.Label(jmp_window, text=self.iv_script).grid(row=1, column=1, padx=20, pady=20)
+        self.script_label = ttk.Label(jmp_window, text=self.iv_script)
+        self.script_label.grid(row=1, column=1, padx=20, pady=20)
         ttk.Button(jmp_window, text='Run', command=run_jmp).grid(row=2, column=0, padx=20, pady=20)
         ttk.Button(jmp_window,text='Cancel', command=jmp_window.destroy).grid(row=2, column=1, padx=20, pady=20)
+
+
 
         # text="Export to JMP", 
 
