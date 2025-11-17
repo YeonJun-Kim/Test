@@ -11,3 +11,4 @@
 # V4.3 (250716) : Auto Config Forward limit 도 불러오도록 변경
 # V5.0_tmp (251013) : GUI tab 추가 (Current source / Voltage source) 및 회로 심화 스터디 PJT 겸용 I2C.py 추가
 # V5.0 (251014) : Export JMP 에서 사용자 별 JMP exe file 경로 변경 가능하도록 업데이트
+# V5.1 (251117) : Plot filter / Plot reload 버튼 추가, JMP Script auto running 관련 Debug (+ 0V bias 표기)

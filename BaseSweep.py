@@ -22,6 +22,13 @@ class BaseSweep(ttk.Frame):
 
     def __init__(self, master, main_window, config):
         super().__init__(master)
+
+
+
+        self.last_selected_labels = set()
+        self.last_selected_sns = set()
+        self.last_selected_pins = set()
+
         self.main_window = main_window
         self.config = config
         self.event = Event()
@@ -114,11 +121,21 @@ class BaseSweep(ttk.Frame):
         self.plot_header = ttk.Label(plot_frame, text=self.config["plot_title"], font=header_font2)
         self.plot_header.grid(row=0, column=0, padx=10, pady=10)
 
+        # --- Add Filter and Reload Buttons near the plot ---
+        self.button_filter = ttk.Button(plot_frame, text="Filter Data", command=self.open_filter_dialog)
+        self.button_filter.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+
+        self.button_reload = ttk.Button(plot_frame, text="Reload Plot", command=self.plot)
+        self.button_reload.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
+
+
+
         # Blank plot
         self.fig = plt.figure(figsize=(5, 5), dpi=130)
         self.ax = self.fig.add_axes([0.1, 0.1, 0.8, 0.8])
         self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
         self.canvas.get_tk_widget().grid(row=1, column=0, padx=10, pady=10)
+
 
         # Parameter Header
         self.header_parameter = ttk.Label(parameter_frame, text=self.config["param_header"], font=header_font)
@@ -327,6 +344,85 @@ class BaseSweep(ttk.Frame):
         self.button_close = ttk.Button(action_frame, text="Close", command=self.close_window)
         self.button_close.grid(row=0, column=5, padx=10, pady=10)
 
+
+
+    def open_filter_dialog(self):
+        import tkinter as tk
+        from tkinter import ttk
+
+        filename = self.entry_filename.get()
+        result_path = os.path.join(os.getcwd(), "Output", filename + ".csv")
+        if not os.path.exists(result_path):
+            msgbox.showerror("Error", "No result file found to filter.")
+            return
+        df_result = pd.read_csv(result_path)
+
+        filter_win = tk.Toplevel(self)
+        filter_win.title("Filter Data")
+
+        # Helper to create checkbox lists with previous selections
+        def create_checkbox_list(parent, items, label_text, selected_set):
+            frame = ttk.LabelFrame(parent, text=label_text)
+            vars = []
+            for item in items:
+                var = tk.BooleanVar(value=(item in selected_set))
+                cb = ttk.Checkbutton(frame, text=str(item), variable=var)
+                cb.pack(anchor="w")
+                vars.append((item, var))
+            frame.pack(side=tk.LEFT, padx=10, pady=10, fill="y")
+            return vars
+
+        label_vars = create_checkbox_list(filter_win, df_result['Label'].unique(), "Label", self.last_selected_labels)
+        sn_vars = create_checkbox_list(filter_win, df_result['SerialNumber'].unique(), "SerialNumber", self.last_selected_sns)
+        pin_vars = create_checkbox_list(filter_win, df_result['Pin'].unique(), "Pin", self.last_selected_pins)
+
+        def apply_filter():
+            selected_labels = {item for item, var in label_vars if var.get()}
+            selected_sns = {item for item, var in sn_vars if var.get()}
+            selected_pins = {item for item, var in pin_vars if var.get()}
+
+            # Save selections for next time
+            self.last_selected_labels = selected_labels
+            self.last_selected_sns = selected_sns
+            self.last_selected_pins = selected_pins
+
+            filtered = df_result.copy()
+            if selected_labels:
+                filtered = filtered[filtered['Label'].isin(selected_labels)]
+            if selected_sns:
+                filtered = filtered[filtered['SerialNumber'].isin(selected_sns)]
+            if selected_pins:
+                filtered = filtered[filtered['Pin'].isin(selected_pins)]
+            self.plot_filtered(filtered)
+            filter_win.destroy()
+
+        ttk.Button(filter_win, text="Apply", command=apply_filter).pack(side=tk.BOTTOM, pady=10)
+
+
+    def plot_filtered(self, df_result):
+        self.ax.clear()
+        self.plot_data = []
+        for label in df_result['Label'].unique():
+            label_data = df_result[df_result['Label'] == label]
+            Module_name = label_data['SerialNumber'].iloc[0]
+            Probe_point = label_data['Pin'].iloc[0]
+            voltages = label_data['Voltage[V]'].tolist()
+            currents = label_data['Current[mA]'].tolist()
+            color = self.colors[len(self.plot_data) % len(self.colors)]
+            if self.sourcetype == "Voltage source":
+                self.plot_data.append((voltages, currents, color, label))
+                self.ax.plot(voltages, currents, color=color, label=f"{label}, SN:{Module_name}, Pin:{Probe_point}")
+            else:
+                self.plot_data.append((currents, voltages, color, label))
+                self.ax.plot(currents, voltages, color=color, label=f"{label}, SN:{Module_name}, Pin:{Probe_point}")
+        self.ax.set_yscale('log')
+        self.ax.set_xlabel(self.config["plot_xlabel"])
+        self.ax.set_ylabel(self.config["plot_ylabel"])
+        self.ax.set_title(self.config["plot_title"])
+        self.ax.legend(loc='upper right')
+        self.canvas.draw()
+
+
     def threading(self):
         self.event.clear()
         t1 = Thread(target=self.start_measurement)
@@ -494,7 +590,7 @@ class BaseSweep(ttk.Frame):
             df_tmp.to_csv(os.getcwd() + "/Output/tmp.csv")
 
             try:
-                subprocess.call([jmp_dir, os.getcwd() + script_dir])
+                subprocess.call([jmp_dir, os.getcwd() + "/" + script_dir])
                 while not os.path.exists(os.getcwd() + "/Output/JMPScriptCompleted.txt"):
                     time.sleep(1)
                 os.remove(os.getcwd() + "/Output/tmp.csv")

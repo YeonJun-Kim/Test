@@ -1,4 +1,5 @@
-﻿Delete Symbols();
+﻿//!
+Delete Symbols();
 Names Default To Here( 1 );
 
 
@@ -10,11 +11,10 @@ Version = "V1.1";
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 //dirpath = Pick File();
-//dir_script = Get Default Directory();
-//dir_result = dir_script || "Output/";
-
-//dt = Open( dir_result || "tmp.csv" );
-dt = current data table();
+dir_script = Get Default Directory();
+dir_result = dir_script || "Output/";
+dt = Open( dir_result || "tmp.csv" );
+//dt = current data table();
 
 
 dt << New Script(
